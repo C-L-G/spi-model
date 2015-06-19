@@ -58,11 +58,12 @@ task Clk_Cs_Task (
 	model_clk	= (ACTIVE == 0)? 0 : 1;
 	repeat(2)			@(posedge clock);
 	model_cs_n	= 0;
+	repeat(10)			@(posedge clock);
 	repeat(number*2)begin	
 		@(posedge clock);
 		model_clk	= ~model_clk;
 	end
-	repeat(1)			@(posedge clock);
+	repeat(10)			@(posedge clock);
 	model_cs_n	= 1;
 endtask:Clk_Cs_Task
 
@@ -104,8 +105,8 @@ logic[7:0]		wr_data;
 
 
 function bit Wr_bit;
-	Wr_bit	= wr_data[0];
-	wr_data	= wr_data >> 1;
+	Wr_bit	= wr_data[7];
+	wr_data	= wr_data << 1;
 endfunction: Wr_bit
 
 task Wr_Data_Task;
@@ -130,9 +131,9 @@ logic[7:0]		rd_data;
 int				rd_cnt	= 0;
 
 function void Rd_bit;
-	rd_data 	= rd_data << 1;
-	rd_data[0]	= model_idata;
-	rd_cnt		= rd_cnt;
+	rd_data 	= rd_data >> 1;
+	rd_data[7]	= model_idata;
+	rd_cnt		= rd_cnt + 1;
 endfunction: Rd_bit
 
 function void Rd_to_Seq;
@@ -142,9 +143,12 @@ function void Rd_to_Seq;
 	end
 endfunction: Rd_to_Seq
 
-task Rd_Data_Task;
-	@(negedge model_cs_n);
-	while(model_cs_n == 1'b0)begin
+task Rd_Data_Task(int rep_num = 8);
+	//@(negedge model_cs_n);
+	wait(model_cs_n == 0);
+//	while(model_cs_n == 1'b0)begin
+	repeat(rep_num)begin
+		if(model_cs_n)	return;
 		if(PHASE == 0 )begin
 			if(ACTIVE == 0)	@(posedge model_clk,posedge model_cs_n);
 			else 			@(negedge model_clk,posedge model_cs_n);
@@ -175,12 +179,29 @@ task Burst_Read(
 	@(posedge clock);
 	if(1)fork
 		Clk_Cs_Task(len*8);
-		Rd_Data_Task;
+		Rd_Data_Task(len*8);
 	join
 	-> rd_fsh;
 	$display("================MISO===================");
 	$display("-->>> read length: %d byte(8bit)",rd_seq.size());
 endtask: Burst_Read
+
+task Burst_CMD(input logic [7:0] seq [$] = wr_seq,int len = 8);
+	rd_seq	= {};
+	wr_seq	= seq;
+	@(posedge clock);
+	if(1)fork
+		Clk_Cs_Task(len*8+wr_seq.size()*8);
+		begin
+			Wr_Data_Task;
+			Rd_Data_Task(len*8);
+		end
+	join
+	-> rd_fsh;
+	$display("================CMD===================");
+	$display("-->>> write length: %d byte(8bit)",wr_seq.size());
+	$display("-->>> read length: %d byte(8bit)",rd_seq.size());
+endtask: Burst_CMD
 	
 
 

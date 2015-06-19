@@ -40,11 +40,25 @@ spi_core #(
 	.sck 			(sck 	)
 );
 
-
-initial begin
+task write (input logic [7:0]	D [$] = write_data);
+	write_data	= D;
 	spi_core_inst.Burst_Write(write_data);
-//	spi_core_inst.Burst_Read(3);
-end
+endtask: write
+
+task read (int length );
+	spi_core_inst.Burst_Read(length); 
+endtask: read
+
+task cmd (input logic [7:0]	D [$] = write_data,int len = 8);
+	write_data	= D;
+	spi_core_inst.Burst_CMD(write_data,len);
+endtask: cmd
+
+
+//initial begin
+//	spi_core_inst.Burst_Write(write_data);
+////	spi_core_inst.Burst_Read(3);
+//end
 
 assign	bit_cnt		= spi_core_inst.bit_cnt;
 assign	byte_cnt	= spi_core_inst.byte_cnt;
