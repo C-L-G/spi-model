@@ -54,6 +54,11 @@ task cmd (input logic [7:0]	D [$] = write_data,int len = 8);
 	spi_core_inst.Burst_CMD(write_data,len);
 endtask: cmd
 
+task hold_cmd (input logic [7:0]	D [$] = write_data,int len = 8);
+	write_data	= D;
+	spi_core_inst.Pulse_CMD(write_data,len);
+endtask: hold_cmd
+
 
 //initial begin
 //	spi_core_inst.Burst_Write(write_data);
