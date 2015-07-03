@@ -10,14 +10,18 @@ ______________  \/  \/ | \/ | ______________
 --English Description:
 	
 --Version:VERA.1.0.0
---Data modified:
+--Data modified:2015/7/3 16:52:13
 --author:Young-ÎâÃ÷
 --E-mail: wmy367@Gmail.com
 --Data created:
 ________________________________________________________
 ********************************************************/
 `timescale 1ns/1ps
-module spi_model (
+module spi_model #(
+parameter	PHASE	= 0,	
+parameter	ACTIVE	= 0,
+parameter	Freq	= 16
+)(
 	output		cs_n		,
 	output		mosi		,
 	input		miso		,
@@ -30,9 +34,9 @@ logic[7:0]	read_data  [$];
 logic[7:0]	write_data [$] = {8'h00,8'h01,8'h02,8'h03,8'h04,8'h01,8'h02,8'h03,8'h04};
 
 spi_core #(
-	.PHASE			(0		),
-	.ACTIVE			(0		),
-	.Freq			(16		)
+	.PHASE			(PHASE	),
+	.ACTIVE			(ACTIVE	),
+	.Freq			(Freq	)
 )spi_core_inst(
 	.cs_n			(cs_n	),	
 	.mosi			(mosi	),

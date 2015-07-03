@@ -10,7 +10,7 @@ ______________  \/  \/ | \/ | ______________
 --English Description:
 	
 --Version:VERA.1.0.0
---Data modified: 2015/6/30 9:07:49
+--Data modified:2015/7/3 16:51:49
 --author:Young-ÎâÃ÷
 --E-mail: wmy367@Gmail.com
 --Data created:
@@ -127,10 +127,14 @@ foreach (wr_seq[i])begin
 			model_odata	= Wr_bit();
 			if(ACTIVE == 0)	@(negedge model_clk);
 			else 			@(posedge model_clk);
-		end else begin
-			model_odata	= Wr_bit();
-			if(ACTIVE == 0)	@(posedge model_clk);
-			else 			@(negedge model_clk);
+		end else begin			
+			if(ACTIVE == 0)begin
+				@(posedge model_clk);
+				model_odata	= Wr_bit();
+			end else begin
+	 			@(negedge model_clk);
+				model_odata	= Wr_bit();
+			end
 	end end
 end
 model_odata	= 1'bx;
@@ -141,16 +145,16 @@ logic[7:0]		rd_data;
 int				rd_cnt	= 0;
 
 function void Rd_bit;
-	rd_data 	= rd_data >> 1;
-	rd_data[7]	= model_idata;
+	rd_data 	= rd_data << 1;
+	rd_data[0]	= model_idata;
 	rd_cnt		= rd_cnt + 1;
 endfunction: Rd_bit
 
 function void Rd_to_Seq;
 	Rd_bit();
 	if(rd_cnt != 0 && (rd_cnt%8) == 0)begin
-	//	rd_seq.push_back(rd_data);
-		rd_seq.push_front(rd_data);
+		rd_seq.push_back(rd_data);
+	//	rd_seq.push_front(rd_data);
 	end
 endfunction: Rd_to_Seq
 
