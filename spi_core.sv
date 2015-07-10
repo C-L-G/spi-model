@@ -10,7 +10,7 @@ ______________  \/  \/ | \/ | ______________
 --English Description:
 	
 --Version:VERA.1.0.0
---Data modified:2015/7/3 16:51:49
+--Data modified:2015/7/10 11:15:21
 --author:Young-ÎâÃ÷
 --E-mail: wmy367@Gmail.com
 --Data created:
@@ -93,8 +93,8 @@ always@(negedge model_cs_n)begin
 end end
 
 always@(model_clk)begin
-	if(	(ACTIVE == 0 && model_clk == 0) ||
-		(ACTIVE == 1 && model_clk == 1)   )begin
+	if(	(ACTIVE == 0 && model_clk == 1) ||
+		(ACTIVE == 1 && model_clk == 0)   )begin
 		len_cnt		<= len_cnt + 1;
 		byte_cnt	<= len_cnt/8+1;
 end end
@@ -122,25 +122,33 @@ endfunction: Wr_bit
 task Wr_Data_Task;
 foreach (wr_seq[i])begin
 	wr_data	= wr_seq[i];
-	repeat(8)begin
-		if(PHASE == 0 )begin
+	
+	if(PHASE == 0 )begin
+		repeat(8)begin
 			model_odata	= Wr_bit();
 			if(ACTIVE == 0)	@(negedge model_clk);
 			else 			@(posedge model_clk);
-		end else begin			
+		end 
+	end else begin
+		repeat(8)begin
 			if(ACTIVE == 0)begin
-				@(posedge model_clk);
-				model_odata	= Wr_bit();
+				wait(model_clk);
+				model_odata	= Wr_bit();wait(!model_clk);;
 			end else begin
-	 			@(negedge model_clk);
-				model_odata	= Wr_bit();
+	 			wait(!model_clk);
+				model_odata	= Wr_bit();wait(model_clk);;
 			end
-	end end
+		end
+	end
 end
-model_odata	= 1'bx;
+//model_odata	= 1'bx;
 endtask: Wr_Data_Task
 
-logic[7:0]		rd_seq	[$];
+always@(model_cs_n)
+	if(model_cs_n)	model_odata	= 1'b0;
+
+logic[7:0]		rd_seq	[$]; 
+logic[7:0]		comp_rd_seq	[$];
 logic[7:0]		rd_data;
 int				rd_cnt	= 0;
 
@@ -172,7 +180,7 @@ task Rd_Data_Task(int rep_num = 8);
 			if(ACTIVE == 0)	@(negedge model_clk,posedge model_cs_n);
 			else 			@(posedge model_clk,posedge model_cs_n);
 			Rd_to_Seq();
-	end end
+	end end  
 endtask: Rd_Data_Task
 
 task Burst_Write(input logic [7:0]	seq [$] = wr_seq);begin
@@ -198,6 +206,7 @@ task Burst_Read(
 		//Sck_Task(len*8+wr_seq.size()*8);
 		Rd_Data_Task(len*8);
 	join
+	comp_rd_seq	= rd_seq;   
 	-> rd_fsh;
 	$display("================MISO===================");
 	$display("-->>> read length: %d byte(8bit)",rd_seq.size());
@@ -215,6 +224,7 @@ task Burst_CMD(input logic [7:0] seq [$] = wr_seq,int len = 8);
 			Rd_Data_Task(len*8);
 		end
 	join
+	comp_rd_seq	= rd_seq;
 	repeat(2)			@(posedge clock);
 	model_cs_n	= 1;
 	-> rd_fsh;
@@ -242,6 +252,7 @@ task Pulse_CMD(input logic [7:0] seq [$] = wr_seq,int len = 8);begin
 			Rd_Data_Task(8);
 		join
 	end	
+	comp_rd_seq	= rd_seq;
 	repeat(10)			@(posedge clock);
 	model_cs_n	= 1;
 	-> rd_fsh;

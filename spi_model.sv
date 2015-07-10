@@ -10,7 +10,7 @@ ______________  \/  \/ | \/ | ______________
 --English Description:
 	
 --Version:VERA.1.0.0
---Data modified:2015/7/3 16:52:13
+--Data modified:2015/7/10 11:15:38
 --author:Young-ÎâÃ÷
 --E-mail: wmy367@Gmail.com
 --Data created:
@@ -71,7 +71,8 @@ endtask: hold_cmd
 
 assign	bit_cnt		= spi_core_inst.bit_cnt;
 assign	byte_cnt	= spi_core_inst.byte_cnt;
-assign	read_data	= spi_core_inst.rd_seq;
+assign	read_data	= spi_core_inst.comp_rd_seq; 
+
 
 endmodule
 
